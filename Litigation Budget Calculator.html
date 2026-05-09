@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Litigation Budget Calculator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a202c;font-size:14px;}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#1a202c 0%,#2d3748 100%);color:white;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.header-left{display:flex;align-items:center;gap:18px;}
+.app-icon{font-size:22px;}
+.app-title{font-size:15px;font-weight:700;color:#90cdf4;letter-spacing:-0.3px;line-height:1;}
+.case-display{font-size:15px;font-weight:600;color:white;}
+.case-sub{font-size:12px;color:#a0aec0;margin-top:1px;}
+.header-right{display:flex;gap:8px;align-items:center;}
+.btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:opacity 0.15s;}
+.btn:hover{opacity:0.85;}
+.btn-primary{background:#4299e1;color:white;}
+.btn-ghost{background:rgba(255,255,255,0.12);color:white;border:1px solid rgba(255,255,255,0.2);}
+.btn-save{background:#48bb78;color:white;}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-add{background:#c6f6d5;color:#276749;}
+.btn-remove{background:#fed7d7;color:#742a2a;}
+
+/* ── Tabs ── */
+.tabs{background:#2d3748;padding:0 32px;display:flex;gap:0;overflow-x:auto;}
+.tab{padding:11px 18px;color:#a0aec0;cursor:pointer;font-size:13px;font-weight:500;border-bottom:3px solid transparent;white-space:nowrap;transition:color 0.15s;}
+.tab:hover{color:#e2e8f0;}
+.tab.active{color:#63b3ed;border-bottom-color:#63b3ed;}
+
+/* ── Panels ── */
+.panel{display:none;padding:28px 32px 60px;max-width:1300px;}
+.panel.active{display:block;}
+
+/* ── Sections ── */
+.section{background:white;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08);margin-bottom:20px;overflow:hidden;}
+.section-header{background:#f7fafc;padding:12px 20px;border-bottom:1px solid #e2e8f0;font-weight:700;font-size:13px;color:#2d3748;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.section-body{padding:20px;}
+
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.wide{grid-column:span 2;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:#718096;}
+input[type=text],input[type=number],select,textarea{padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:14px;color:#1a202c;background:#ebf8ff;transition:border-color 0.15s;font-family:inherit;-moz-appearance:textfield;}
+textarea{resize:vertical;min-height:70px;}
+select{appearance:none;cursor:pointer;}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{outline:none;border-color:#4299e1;background:#fff;}
+.input-hint{font-size:11px;color:#a0aec0;}
+
+/* ── Metric cards ── */
+.card-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+.card{background:white;border-radius:10px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.07);}
+.card-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:#a0aec0;margin-bottom:6px;}
+.card-value{font-size:20px;font-weight:800;letter-spacing:-0.5px;color:#1a202c;}
+.card-value.warn{color:#d69e2e;}
+.card-value.danger{color:#e53e3e;}
+.card-value.ok{color:#276749;}
+.card-sub{font-size:11px;color:#a0aec0;margin-top:3px;}
+
+/* ── Tables ── */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:#2d3748;color:white;padding:9px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;}
+th.r{text-align:right;}
+th.c{text-align:center;}
+td{padding:7px 12px;border-bottom:1px solid #f0f4f8;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#f7fafc;}
+td.r{text-align:right;font-variant-numeric:tabular-nums;}
+td.c{text-align:center;}
+td input[type=number],td input[type=text]{border:1.5px solid #e2e8f0;border-radius:5px;padding:5px 8px;font-size:13px;background:#ebf8ff;width:100%;}
+td select{border:1.5px solid #e2e8f0;border-radius:5px;padding:5px 8px;font-size:13px;background:#ebf8ff;width:100%;}
+td input:focus,td select:focus{outline:none;border-color:#4299e1;background:white;}
+
+/* ── Phase table ── */
+.phase-hdr-row td{background:#2d3748!important;color:white;font-weight:700;font-size:12px;border-top:3px solid #4299e1;}
+.phase-hdr-row.excluded td{background:#718096!important;opacity:0.7;}
+.phase-toggle-btn{background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.phase-toggle-btn.off{background:rgba(255,80,80,0.2);border-color:rgba(255,120,120,0.4);}
+.phase-code-badge{display:inline-block;background:rgba(255,255,255,0.2);color:white;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;margin-right:6px;letter-spacing:0.5px;}
+.subtotal-row td{background:#f7fafc;font-weight:700;color:#2d3748;border-top:2px solid #e2e8f0;}
+.subtotal-row.excluded td{color:#a0aec0;text-decoration:line-through;}
+.grand-total-row td{background:#1a202c;color:white;font-weight:800;font-size:14px;}
+.grand-total-row td.r{color:#9ae6b4;}
+.task-row.excluded td{color:#a0aec0;font-style:italic;}
+.actuals-col{background:#fffbeb!important;}
+.over-budget{color:#e53e3e!important;font-weight:700;}
+.under-budget{color:#276749!important;}
+.cost-cat-hdr{background:#edf2f7;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#4a5568;border-bottom:1px solid #e2e8f0;}
+
+/* ── Bar chart ── */
+.bar-chart{margin-top:4px;}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;}
+.bar-name{width:190px;flex-shrink:0;color:#4a5568;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;height:18px;background:#edf2f7;border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.4s;}
+.bar-amount{width:90px;text-align:right;font-variant-numeric:tabular-nums;color:#2d3748;font-weight:600;flex-shrink:0;}
+
+/* ── Waterfall ── */
+.wf-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f7fafc;font-size:13px;}
+.wf-row:last-child{border-bottom:none;}
+.wf-indent{padding-left:14px;color:#4a5568;}
+.wf-excluded{color:#a0aec0;font-style:italic;}
+.wf-val{font-variant-numeric:tabular-nums;font-weight:500;}
+.wf-total{font-weight:800;font-size:15px;background:#1a202c;color:white;margin:12px -20px -20px;padding:12px 20px;display:flex;justify-content:space-between;}
+
+/* ── Scenario cards ── */
+.scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.scenario-card{border-radius:10px;padding:18px 20px;border:2px solid transparent;}
+@keyframes pulseGreen{0%,100%{box-shadow:0 0 0 0 rgba(154,230,180,0);}50%{box-shadow:0 0 14px 5px rgba(154,230,180,0.45);}}
+@keyframes pulseBlue{0%,100%{box-shadow:0 0 0 0 rgba(144,205,244,0);}50%{box-shadow:0 0 14px 5px rgba(144,205,244,0.45);}}
+@keyframes pulseRed{0%,100%{box-shadow:0 0 0 0 rgba(254,178,178,0);}50%{box-shadow:0 0 14px 5px rgba(254,178,178,0.45);}}
+.scenario-card.best{background:#f0fff4;border-color:#9ae6b4;animation:pulseGreen 3.2s ease-in-out infinite;}
+.scenario-card.likely{background:#ebf8ff;border-color:#90cdf4;animation:pulseBlue 3.2s ease-in-out infinite 0.4s;}
+.scenario-card.worst{background:#fff5f5;border-color:#feb2b2;animation:pulseRed 3.2s ease-in-out infinite 0.8s;}
+.sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;}
+.best .sc-label{color:#276749;}
+.likely .sc-label{color:#2b6cb0;}
+.worst .sc-label{color:#c53030;}
+.sc-name{font-size:15px;font-weight:800;margin-bottom:8px;}
+.best .sc-name{color:#276749;}
+.likely .sc-name{color:#2b6cb0;}
+.worst .sc-name{color:#c53030;}
+.sc-amount{font-size:26px;font-weight:900;letter-spacing:-0.5px;}
+.best .sc-amount{color:#276749;}
+.likely .sc-amount{color:#2b6cb0;}
+.worst .sc-amount{color:#c53030;}
+.sc-hrs{font-size:12px;margin-top:4px;}
+.best .sc-hrs{color:#48bb78;}
+.likely .sc-hrs{color:#4299e1;}
+.worst .sc-hrs{color:#e53e3e;}
+.sc-desc{font-size:11px;color:#718096;margin-top:8px;line-height:1.6;border-top:1px solid rgba(0,0,0,0.07);padding-top:8px;}
+
+/* ── Info panels ── */
+.info-panel{background:linear-gradient(135deg,#fffbeb,#fefce8);border:1px solid #f6e05e;border-radius:10px;margin-bottom:20px;overflow:hidden;}
+.info-header{padding:11px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:13px;color:#744210;user-select:none;gap:8px;}
+.info-header:hover{background:rgba(246,224,94,0.2);}
+.info-caret{font-size:11px;transition:transform 0.25s;color:#a16207;flex-shrink:0;}
+.info-caret.closed{transform:rotate(-90deg);}
+.info-body{padding:12px 18px 16px;font-size:13px;color:#4a5568;line-height:1.7;border-top:1px solid #fef08a;}
+.info-body.hidden{display:none;}
+.info-body p{margin-bottom:8px;}
+.info-body p:last-child{margin-bottom:0;}
+.info-tip{background:#fef3c7;border-left:3px solid #d97706;padding:8px 12px;border-radius:0 6px 6px 0;margin-top:10px;font-size:12px;color:#78350f;line-height:1.5;}
+
+/* ── Layout helpers ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+@media(max-width:900px){
+  .two-col,.three-col,.scenario-grid{grid-template-columns:1fr;}
+}
+.toggle-row{display:flex;align-items:center;gap:10px;font-size:13px;color:#4a5568;margin-bottom:12px;}
+.toggle-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;}
+
+/* ── Retainer ── */
+.retainer-box{background:linear-gradient(135deg,#ebf8ff,#bee3f8);border:1px solid #90cdf4;border-radius:10px;padding:20px 22px;}
+.retainer-amount{font-size:36px;font-weight:900;color:#2b6cb0;letter-spacing:-1px;}
+.retainer-label{font-size:12px;color:#2c5282;margin-top:4px;}
+.retainer-detail{font-size:12px;color:#4a5568;margin-top:12px;line-height:1.6;}
+
+/* ── Phase colors ── */
+.phase-color-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+
+/* ── Scenario params ── */
+.sc-param-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.sc-param-card{background:white;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-top:4px solid #e2e8f0;}
+.sc-param-card.best-card{border-top-color:#68d391;}
+.sc-param-card.likely-card{border-top-color:#63b3ed;}
+.sc-param-card.worst-card{border-top-color:#fc8181;}
+.sc-param-card label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:#718096;margin-bottom:4px;}
+.sc-param-card input,.sc-param-card textarea,.sc-param-card select{width:100%;margin-bottom:10px;}
+.pct-input-wrap{display:flex;align-items:center;gap:6px;}
+.pct-input-wrap input{flex:1;}
+.pct-input-wrap span{font-size:14px;font-weight:700;color:#4a5568;}
+
+/* ── Site footer ── */
+.site-footer{background:#1a202c;color:#718096;padding:0;border-top:2px solid #4299e1;}
+.footer-brand{background:#162032;padding:20px 32px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;border-bottom:1px solid #2d3748;}
+.footer-logo{font-size:17px;font-weight:900;color:#90cdf4;letter-spacing:-0.4px;line-height:1;}
+.footer-tagline{font-size:11px;color:#63b3ed;margin-top:3px;font-style:italic;}
+.footer-contact{font-size:12px;color:#a0aec0;margin-top:6px;line-height:1.7;}
+.footer-contact a{color:#63b3ed;text-decoration:none;}
+.footer-contact a:hover{text-decoration:underline;}
+.footer-referral{background:linear-gradient(135deg,rgba(66,153,225,0.18),rgba(49,130,206,0.12));border:1.5px solid rgba(99,179,237,0.45);border-radius:10px;padding:16px 20px;max-width:460px;font-size:13px;color:#cbd5e0;line-height:1.7;}
+.footer-referral strong{color:#90cdf4;font-size:14px;display:block;margin-bottom:4px;}
+.footer-disclaimer{padding:18px 32px;font-size:11px;color:#4a5568;line-height:1.75;border-top:1px solid #2d3748;}
+.footer-disclaimer strong{color:#718096;}
+.footer-disclaimer .disclaimer-title{font-size:12px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;}
+.footer-bottom{background:#0f1923;padding:10px 32px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#4a5568;flex-wrap:wrap;gap:6px;}
+
+/* ── Privacy notice ── */
+.privacy-notice{background:#f0f4f8;border:1px solid #cbd5e0;border-left:3px solid #63b3ed;border-radius:6px;padding:9px 14px;font-size:12px;color:#4a5568;line-height:1.6;margin-bottom:16px;}
+.privacy-notice strong{color:#2d3748;}
+
+/* ── Print ── */
+@media print{
+  .header-right,.tabs,.info-panel,.btn-remove,.btn-add,.phase-toggle-btn,.btn{display:none!important;}
+  .panel{display:block!important;padding:0 0 32px;}
+  .panel+.panel{page-break-before:always;}
+  body{background:white;}
+  .card{box-shadow:none;border:1px solid #e2e8f0;}
+  .site-footer{display:none;}
+  table{font-size:12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="app-icon">⚖️</div>
+    <div>
+      <div class="app-title">Litigation Budget Calculator</div>
+    </div>
+    <div>
+      <div class="case-display" id="h_case">New Matter</div>
+      <div class="case-sub" id="h_sub">Ready Legal</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-ghost btn-sm" onclick="newBudget()">New Budget</button>
+    <button class="btn btn-save btn-sm" onclick="saveAsHTML()">💾 Save as File</button>
+    <button class="btn btn-primary btn-sm" onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active"  onclick="switchTab('matter',   this)">Matter</div>
+  <div class="tab"         onclick="switchTab('team',     this)">Team &amp; Rates</div>
+  <div class="tab"         onclick="switchTab('budget',   this)">Phase Budget</div>
+  <div class="tab"         onclick="switchTab('costs',    this)">Costs</div>
+  <div class="tab"         onclick="switchTab('summary',  this)">Summary</div>
+  <div class="tab"         onclick="switchTab('scenarios',this)">Scenarios</div>
+</div>
+
+
+<!-- ═══════════ MATTER ═══════════ -->
+<div class="panel active" id="panel-matter">
+
+  <div class="section">
+    <div class="section-header">Matter Information</div>
+    <div class="section-body">
+      <div class="form-grid">
+        <div class="form-group wide">
+          <label>Case / Matter Name</label>
+          <input type="text" id="i_casename" value="New Matter" oninput="recalc()">
+        </div>
+        <div class="form-group wide">
+          <label>Client Name</label>
+          <input type="text" id="i_client" placeholder="Client name" oninput="recalc()">
+        </div>
+        <div class="form-group">
+          <label>Case Type</label>
+          <select id="i_casetype" onchange="recalc()">
+            <option>Commercial Litigation</option>
+            <option>Employment Dispute</option>
+            <option>Personal Injury — Plaintiff</option>
+            <option>Personal Injury — Defense</option>
+            <option>Real Estate Dispute</option>
+            <option>Breach of Contract</option>
+            <option>Business Torts</option>
+            <option>Intellectual Property</option>
+            <option>Family Law</option>
+            <option>Probate / Estate</option>
+            <option>Criminal Defense</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Posture</label>
+          <select id="i_posture" onchange="recalc()">
+            <option>Plaintiff / Petitioner</option>
+            <option>Defendant / Respondent</option>
+            <option>Cross-Claimant</option>
+            <option>Third-Party Defendant</option>
+            <option>Intervenor</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Court / Venue</label>
+          <input type="text" id="i_court" placeholder="e.g., 9th Judicial Circuit, Orange County" oninput="recalc()">
+        </div>
+        <div class="form-group">
+          <label>Matter Number</label>
+          <input type="text" id="i_matter" placeholder="e.g., 2025-001" oninput="recalc()">
+        </div>
+        <div class="form-group">
+          <label>Fee Arrangement</label>
+          <select id="i_feetype" onchange="recalc()">
+            <option>Hourly</option>
+            <option>Contingency</option>
+            <option>Flat Fee</option>
+            <option>Hybrid (Hourly + Contingency)</option>
+            <option>Capped / Not-to-Exceed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contingency % (if applicable)</label>
+          <input type="number" id="i_contingency" value="33" min="0" max="100" oninput="recalc()">
+        </div>
+        <div class="form-group">
+          <label>Estimated Case Value ($)</label>
+          <input type="number" id="i_casevalue" value="0" oninput="recalc()">
+          <span class="input-hint">Claimed damages or dispute value</span>
+        </div>
+        <div class="form-group">
+          <label>Budget Period</label>
+          <input type="text" id="i_period" placeholder="e.g., 2025 – 2027 through trial" oninput="recalc()">
+        </div>
+        <div class="form-group full">
+          <div class="privacy-notice">
+            <strong>🔒 Your data stays local.</strong> This tool does not transmit, collect, store, or have access to any information you enter. All content remains entirely within your browser. To preserve your work, use the <em>Save as File</em> button in the header or <em>Print</em>. Closing this tab without saving will discard all changes.
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Client Goals &amp; Case Strategy</label>
+          <textarea id="i_goals" rows="3" placeholder="What does the client want to achieve? Early settlement? Injunctive relief? Note the client's minimum acceptable outcome and optimal outcome — these drive the budget strategy."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Case Description &amp; Key Facts</label>
+          <textarea id="i_notes" rows="3" placeholder="Brief description of the dispute, key legal issues, complexity factors, anticipated opposing counsel strategy..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Budget Assumptions &amp; Qualifications</label>
+          <textarea id="i_assumptions" rows="3" placeholder="List key assumptions (number of depositions, document volume, expert witnesses, expected trial length). Note what is excluded and contingencies that could materially affect costs."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════ TEAM ═══════════ -->
+<div class="panel" id="panel-team">
+
+  <div class="info-panel">
+    <div class="info-header" onclick="toggleInfo(this)"><span>💡 Team &amp; Rates</span><span class="info-caret">▾</span></div>
+    <div class="info-body">
+      <p>Add each timekeeper who will work this matter. Selecting a role auto-fills the standard rate — override it as needed. Enter a client discount if you've negotiated a reduced rate; the tool uses the client rate for all fee calculations.</p>
+      <div class="info-tip">⚡ The blended effective rate (total fees ÷ total hours) appears on the Summary tab. Present this to clients as a benchmark against comparable matters.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      Timekeepers
+      <button class="btn btn-add btn-sm" onclick="addStaff()">+ Add Timekeeper</button>
+    </div>
+    <div class="section-body" style="padding:0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th style="width:160px;">Role</th>
+            <th class="r" style="width:130px;">Std. Rate ($/hr)</th>
+            <th class="r" style="width:130px;">Client Discount %</th>
+            <th class="r" style="width:130px;">Client Rate ($/hr)</th>
+            <th class="c" style="width:70px;">Remove</th>
+          </tr>
+        </thead>
+        <tbody id="staff-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════ PHASE BUDGET ═══════════ -->
+<div class="panel" id="panel-budget">
+
+  <div class="info-panel">
+    <div class="info-header" onclick="toggleInfo(this)"><span>💡 Phase Budget</span><span class="info-caret">▾</span></div>
+    <div class="info-body">
+      <p>Build your budget phase by phase using the L100–L500 framework. Assign a timekeeper and estimated hours to each task — fees calculate from the client billing rate automatically.</p>
+      <p><strong>Exclude phases</strong> you don't expect to reach (e.g., L500 Appeal). Excluded phases are tracked as contingent costs and flow into the worst-case scenario.</p>
+      <div class="info-tip">⚡ Be specific with task descriptions. "Research statute of limitations under the discovery rule" is more defensible than "Research." Specificity also helps when presenting the budget to the client.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+    <div class="toggle-row" style="margin:0;">
+      <input type="checkbox" id="show-actuals-toggle" onchange="renderPhases();recalc()">
+      <label for="show-actuals-toggle" style="text-transform:none;font-size:13px;letter-spacing:0;color:#2d3748;cursor:pointer;">Track Actuals (show hours billed to date)</label>
+    </div>
+    <button class="btn btn-add btn-sm" onclick="addPhase()">+ Add Phase</button>
+  </div>
+
+  <div class="section">
+    <div class="section-body" style="padding:0;overflow-x:auto;">
+      <table id="phase-table">
+        <thead>
+          <tr>
+            <th style="min-width:240px;">Phase / Task</th>
+            <th style="min-width:140px;">Timekeeper</th>
+            <th class="r" style="width:90px;">Est. Hours</th>
+            <th class="r" style="width:90px;" id="th-actual">Actual Hrs</th>
+            <th class="r" style="width:110px;">Rate ($/hr)</th>
+            <th class="r" style="width:110px;">Est. Fee ($)</th>
+            <th class="r" style="width:110px;" id="th-actual-fee">Actual Fee ($)</th>
+            <th class="c" style="width:70px;">Remove</th>
+          </tr>
+        </thead>
+        <tbody id="phase-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════ COSTS ═══════════ -->
+<div class="panel" id="panel-costs">
+
+  <div class="info-panel">
+    <div class="info-header" onclick="toggleInfo(this)"><span>💡 Hard Costs &amp; Disbursements</span><span class="info-caret">▾</span></div>
+    <div class="info-body">
+      <p>Enter all anticipated out-of-pocket costs. These are billed to the client in addition to attorney fees. Common categories include court filing fees, deposition costs, expert witnesses, trial exhibits, and mediation fees.</p>
+      <p>Update costs as the matter progresses — actual disbursements often differ from estimates. Costs flow into all budget totals and scenario projections.</p>
+      <div class="info-tip">⚡ Even $0 line items are worth listing — it signals to the client that you've thought through these expenses and they could increase depending on how the case develops.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      Costs &amp; Disbursements
+      <button class="btn btn-add btn-sm" onclick="addCostRow()">+ Add Line</button>
+    </div>
+    <div class="section-body" style="padding:0;">
+      <table id="costs-table">
+        <thead>
+          <tr>
+            <th style="width:180px;">Category</th>
+            <th>Description</th>
+            <th class="r" style="width:130px;">Amount ($)</th>
+            <th class="c" style="width:70px;">Remove</th>
+          </tr>
+        </thead>
+        <tbody id="costs-body"></tbody>
+        <tfoot>
+          <tr class="grand-total-row">
+            <td colspan="2">Total Estimated Costs</td>
+            <td class="r" id="costs-total-cell">$0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════ SUMMARY ═══════════ -->
+<div class="panel" id="panel-summary">
+
+  <div class="card-row" id="summary-cards">
+    <div class="card">
+      <div class="card-label">Total Est. Fees</div>
+      <div class="card-value" id="s_fees">$0</div>
+      <div class="card-sub">Active phases only</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Est. Costs</div>
+      <div class="card-value" id="s_costs">$0</div>
+      <div class="card-sub">Disbursements</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Budget</div>
+      <div class="card-value ok" id="s_total">$0</div>
+      <div class="card-sub">Fees + costs</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Contingent Budget</div>
+      <div class="card-value warn" id="s_contingent">$0</div>
+      <div class="card-sub">Excluded phases if reached</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Est. Hours</div>
+      <div class="card-value" id="s_hours">0</div>
+      <div class="card-sub">Active phases only</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Blended Rate</div>
+      <div class="card-value" id="s_blend">—</div>
+      <div class="card-sub">Fees ÷ hours</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Damages / Budget</div>
+      <div class="card-value" id="s_ratio">—</div>
+      <div class="card-sub">Case value ÷ budget</div>
+    </div>
+    <div class="card" id="actuals-card" style="display:none;">
+      <div class="card-label">Billed to Date</div>
+      <div class="card-value" id="s_actual">$0</div>
+      <div class="card-sub">vs. <span id="s_actual_pct">0%</span> of budget</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">Phase Summary</div>
+    <div class="section-body" style="padding:0;">
+      <table class="exec-table">
+        <thead>
+          <tr>
+            <th style="width:70px;">Phase</th>
+            <th>Description</th>
+            <th class="r">Est. Hours</th>
+            <th class="r" id="th-actual-exec">Actual Hrs</th>
+            <th class="r">Est. Fees</th>
+            <th class="r" id="th-actual-exec-fee">Actual Fees</th>
+            <th class="r">% of Total</th>
+            <th class="c">Status</th>
+          </tr>
+        </thead>
+        <tbody id="exec-body"></tbody>
+        <tfoot id="exec-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <div class="section-header">Budget by Phase</div>
+      <div class="section-body"><div class="bar-chart" id="phase-chart"></div></div>
+    </div>
+    <div class="section">
+      <div class="section-header">Budget by Timekeeper</div>
+      <div class="section-body"><div class="bar-chart" id="staff-chart"></div></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <div class="section-header">Fee Waterfall by Phase</div>
+      <div class="section-body"><div id="fee-waterfall"></div></div>
+    </div>
+    <div class="section">
+      <div class="section-header">Cost Breakdown</div>
+      <div class="section-body"><div id="cost-waterfall"></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">Suggested Initial Retainer</div>
+    <div class="section-body">
+      <div class="retainer-box">
+        <div class="retainer-amount" id="r_amount">$0</div>
+        <div class="retainer-label">Recommended Initial Retainer</div>
+        <div class="retainer-detail" id="r_detail">Enter matter details and phase hours to generate a retainer recommendation.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══════════ SCENARIOS ═══════════ -->
+<div class="panel" id="panel-scenarios">
+
+  <div class="info-panel">
+    <div class="info-header" onclick="toggleInfo(this)"><span>💡 Scenario Analysis</span><span class="info-caret">▾</span></div>
+    <div class="info-body">
+      <p>Scenario analysis converts your base budget into a realistic range for the client. Adjust the hours percentage for each scenario — 100% is your base estimate. Best case might assume early resolution at 40%, while worst case includes contingent phases and assumes maximum complexity at 160%.</p>
+      <p>Present all three ranges in the engagement letter. Clients make better litigation decisions — and have fewer fee disputes — when they understand the full cost spectrum at the outset.</p>
+      <div class="info-tip">⚡ Update scenarios after major case events (summary judgment denial, discovery disputes, change of counsel) so the client's working budget reflects current reality.</div>
+    </div>
+  </div>
+
+  <!-- Scenario parameter cards -->
+  <div class="sc-param-grid">
+    <div class="sc-param-card best-card">
+      <label>Scenario Name</label>
+      <input type="text" id="sc_best_name" value="Best Case" oninput="recalc()">
+      <label>Hours Adjustment</label>
+      <div class="pct-input-wrap">
+        <input type="number" id="sc_best_pct" value="40" min="5" max="200" step="5" oninput="recalc()">
+        <span>% of base hours</span>
+      </div>
+      <label>Description</label>
+      <textarea id="sc_best_desc" rows="3" oninput="recalc()">Case resolves early — dismissal, pre-suit settlement, or settlement at mediation before significant discovery. Minimal motion practice.</textarea>
+    </div>
+    <div class="sc-param-card likely-card">
+      <label>Scenario Name</label>
+      <input type="text" id="sc_likely_name" value="Likely Case" oninput="recalc()">
+      <label>Hours Adjustment</label>
+      <div class="pct-input-wrap">
+        <input type="number" id="sc_likely_pct" value="100" min="5" max="200" step="5" oninput="recalc()">
+        <span>% of base hours</span>
+      </div>
+      <label>Description</label>
+      <textarea id="sc_likely_desc" rows="3" oninput="recalc()">Full discovery completed, contested pre-trial motions, then settlement before or during trial. No appeal anticipated.</textarea>
+    </div>
+    <div class="sc-param-card worst-card">
+      <label>Scenario Name</label>
+      <input type="text" id="sc_worst_name" value="Worst Case" oninput="recalc()">
+      <label>Hours Adjustment</label>
+      <div class="pct-input-wrap">
+        <input type="number" id="sc_worst_pct" value="160" min="5" max="300" step="5" oninput="recalc()">
+        <span>% of base hours</span>
+      </div>
+      <label>Description</label>
+      <textarea id="sc_worst_desc" rows="3" oninput="recalc()">Contested trial through verdict, post-trial motions, and possible appeal. All contingent phases included at full complexity.</textarea>
+    </div>
+  </div>
+
+  <!-- Animated summary cards -->
+  <div class="scenario-grid">
+    <div class="scenario-card best">
+      <div class="sc-label">Scenario A</div>
+      <div class="sc-name" id="sc_best_label">Best Case</div>
+      <div class="sc-amount" id="sc_best_amt">$0</div>
+      <div class="sc-hrs" id="sc_best_hrs">0 hrs</div>
+      <div class="sc-desc" id="sc_best_desc_disp"></div>
+    </div>
+    <div class="scenario-card likely">
+      <div class="sc-label">Scenario B</div>
+      <div class="sc-name" id="sc_likely_label">Likely Case</div>
+      <div class="sc-amount" id="sc_likely_amt">$0</div>
+      <div class="sc-hrs" id="sc_likely_hrs">0 hrs</div>
+      <div class="sc-desc" id="sc_likely_desc_disp"></div>
+    </div>
+    <div class="scenario-card worst">
+      <div class="sc-label">Scenario C</div>
+      <div class="sc-name" id="sc_worst_label">Worst Case</div>
+      <div class="sc-amount" id="sc_worst_amt">$0</div>
+      <div class="sc-hrs" id="sc_worst_hrs">0 hrs</div>
+      <div class="sc-desc" id="sc_worst_desc_disp"></div>
+    </div>
+  </div>
+
+  <!-- Detailed breakdown table -->
+  <div class="section">
+    <div class="section-header">Scenario Detail by Phase</div>
+    <div class="section-body" style="padding:0;overflow-x:auto;">
+      <table id="scenario-detail-table">
+        <thead>
+          <tr>
+            <th style="width:70px;">Phase</th>
+            <th>Description</th>
+            <th class="c" style="width:80px;">Status</th>
+            <th class="r">Base Hrs</th>
+            <th class="r">Base Fees</th>
+            <th class="r" style="background:#276749;" id="sc_best_col_hdr">Best Case</th>
+            <th class="r" style="background:#2b6cb0;" id="sc_likely_col_hdr">Likely Case</th>
+            <th class="r" style="background:#c53030;" id="sc_worst_col_hdr">Worst Case</th>
+          </tr>
+        </thead>
+        <tbody id="scenario-detail-body"></tbody>
+        <tfoot id="scenario-detail-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Client narrative -->
+  <div class="section">
+    <div class="section-header">Client Presentation Narrative</div>
+    <div class="section-body">
+      <div id="scenario-narrative" style="font-size:13px;color:#2d3748;line-height:1.8;background:#f7fafc;padding:16px 18px;border-radius:8px;border:1px solid #e2e8f0;white-space:pre-wrap;"></div>
+    </div>
+  </div>
+
+</div>
+
+
+<div class="site-footer">
+
+  <!-- Brand bar -->
+  <div class="footer-brand">
+    <div>
+      <div class="footer-logo">READY LEGAL</div>
+      <div class="footer-tagline">Florida Construction Law &nbsp;·&nbsp; Offices: Orlando</div>
+      <div class="footer-contact">
+        <a href="https://home.readylegal.net" target="_blank">home.readylegal.net</a> &nbsp;·&nbsp;
+        <a href="mailto:admin@readylegal.net">admin@readylegal.net</a>
+      </div>
+    </div>
+    <div class="footer-referral">
+      <strong>📬 We Welcome Referrals from Fellow Attorneys.</strong><br>
+      READY LEGAL handles Florida construction law — contractor and subcontractor disputes, construction defects, lien claims, bond claims, and related litigation. If a client comes to you with a Florida construction matter, we would genuinely appreciate the introduction and will take great care of them. Reach us at <a href="mailto:admin@readylegal.net" style="color:#90cdf4;">admin@readylegal.net</a> or <a href="https://home.readylegal.net" target="_blank" style="color:#90cdf4;">home.readylegal.net</a>.
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="footer-disclaimer">
+    <div class="disclaimer-title">Important Disclaimers &amp; Terms of Use</div>
+
+    <strong>Experimental Tool — No Reliance.</strong> This litigation budget calculator is an experimental planning aid provided on an as-is, as-available basis. It may produce inaccurate, incomplete, or misleading results. Outputs are rough estimates only and are not a guarantee, warranty, or representation of any kind regarding actual fees, costs, or outcomes. No output of this tool should be relied upon for any purpose without independent verification by qualified legal and financial professionals. By accessing or using this tool, you expressly agree not to rely on its outputs for any legal, financial, or business decision.
+
+    &nbsp; <strong>For Licensed Attorneys Only.</strong> This tool is intended solely for use by licensed attorneys and other qualified legal professionals. It is not intended for use by members of the general public, clients, or any person who is not a licensed lawyer. Nothing in this tool creates an attorney-client relationship. Use of this tool by non-attorneys is unauthorized and strictly prohibited.
+
+    &nbsp; <strong>Not Legal or Financial Advice.</strong> Nothing generated by this tool constitutes legal advice, financial advice, or a professional opinion of any kind. The tool does not account for the specific facts, applicable law, court rules, local practices, or circumstances of any particular matter. All budgets must be reviewed, adjusted, and approved by supervising counsel with knowledge of the specific case before use or presentation to any client.
+
+    &nbsp; <strong>Sample Rates Are Placeholders Only.</strong> Any hourly rates, billing rates, or cost figures pre-populated or suggested by this tool are illustrative placeholders only. They do not reflect actual market rates, court-awarded rates, Ready Legal's rates, or rates appropriate for any particular matter, jurisdiction, or timekeeper. Rates vary significantly by market, practice area, experience level, and client agreement. Nothing herein should be construed as a representation of what any attorney charges or should charge.
+
+    &nbsp; <strong>Limitation of Liability &amp; Release.</strong> To the maximum extent permitted by applicable law, Ready Legal, its attorneys, employees, and agents expressly disclaim all liability for any loss, damage, cost, or claim arising from or related to the use of or reliance on this tool, including any errors, omissions, or inaccuracies in its outputs. By using this tool, you agree to hold harmless and release Ready Legal and its attorneys from any and all claims, demands, or causes of action arising out of or relating to your use of this tool, including claims of professional negligence, negligent misrepresentation, or any other tort or statutory theory.
+
+    &nbsp; <strong>License — Personal Use Only.</strong> This tool is licensed for personal, professional use by individual licensed attorneys only. You may not reproduce, redistribute, resell, publish, sublicense, modify, reverse-engineer, or otherwise exploit this tool or its underlying code in whole or in part without the prior written consent of Ready Legal. Any unauthorized use or reproduction is a violation of these terms and may constitute infringement of intellectual property rights.
+
+    &nbsp; <strong>No Data Collection.</strong> This tool does not transmit, collect, or retain any data entered by users. All input remains local to the user's browser. Ready Legal has no access to, and no responsibility for, any information entered into this tool.
+
+    &nbsp; <strong>Changes Without Notice.</strong> Ready Legal reserves the right to modify, update, or discontinue this tool at any time without notice. These disclaimers may be updated periodically, and continued use of the tool constitutes acceptance of any revised terms.
+  </div>
+
+  <div class="footer-bottom">
+    <span>© READY LEGAL · Florida Construction Law · Orlando, FL · All rights reserved.</span>
+    <span>Litigation Budget Calculator · Experimental tool for attorney use only · Not legal or financial advice</span>
+  </div>
+
+</div>
+
+
+<script>
+var __INITIAL_STATE__ = null; // SAVE_MARKER
+
+// ── Helpers ──────────────────────────────────────────────────
+function uid()  { return Math.random().toString(36).slice(2,9); }
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtH(n){ return (+n % 1 === 0) ? (+n).toFixed(0) : (+n).toFixed(1); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function v(id)  { const e=document.getElementById(id); return e?e.value:''; }
+function vn(id) { const e=document.getElementById(id); return e?+(e.value||0):0; }
+function set(id,txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
+function clamp(x,a,b){ return Math.max(a,Math.min(b,x)); }
+function cap(s){ return s.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+
+const ROLE_DEFAULTS = {
+  partner: 450,
+  senior_associate: 325,
+  associate: 275,
+  paralegal: 125,
+  law_clerk: 75,
+  other: 200,
+};
+
+const PHASE_COLORS = { L100:'#4299e1', L200:'#9f7aea', L300:'#ed8936', L400:'#e53e3e', L500:'#38b2ac' };
+const COST_COLORS  = ['#68d391','#63b3ed','#f6ad55','#fc8181','#76e4f7','#b794f4','#a0aec0'];
+
+// ── Data ─────────────────────────────────────────────────────
+let staffList = [];
+let phases    = [];
+let costRows  = [];
+
+function clientRate(s){ return s.stdRate * (1 - clamp(s.discount,0,100)/100); }
+function getRate(staffId){ const s=staffList.find(x=>x.id===staffId); return s?clientRate(s):0; }
+function phaseFees(ph){ return ph.tasks.reduce((a,t)=>a+t.hours*getRate(t.staffId),0); }
+function totalCosts(){ return costRows.reduce((a,r)=>a+r.amount,0); }
+
+function makePhase(code, name, tasks) {
+  return { id:uid(), code, name, included:true, tasks:tasks.map(t=>({id:uid(),...t,actualHours:0})) };
+}
+
+// ── Default data ─────────────────────────────────────────────
+function initStaff() {
+  staffList = [
+    { id:uid(), name:'Senior Partner',  role:'partner',          stdRate:450, discount:0 },
+    { id:uid(), name:'Associate',       role:'associate',        stdRate:275, discount:0 },
+    { id:uid(), name:'Paralegal',       role:'paralegal',        stdRate:125, discount:0 },
+  ];
+}
+
+function initPhases() {
+  const s0=staffList[0].id, s1=staffList[1].id, s2=staffList[2].id;
+  phases = [
+    makePhase('L100','Case Assessment & Administration',[
+      {desc:'Initial client consultation and fact investigation',           staffId:s0, hours:3},
+      {desc:'Case analysis and litigation strategy',                        staffId:s0, hours:4},
+      {desc:'Legal research — claims, defenses, and legal theory',          staffId:s1, hours:8},
+      {desc:'Expert and consultant identification',                         staffId:s0, hours:2},
+      {desc:'Document collection and file organization',                    staffId:s2, hours:4},
+      {desc:'Litigation budget preparation',                                staffId:s0, hours:2},
+      {desc:'Pre-suit demand letter / settlement evaluation',               staffId:s0, hours:2},
+      {desc:'Client communications and status reporting (ongoing)',         staffId:s0, hours:4},
+    ]),
+    makePhase('L200','Pre-Trial Pleadings & Motions',[
+      {desc:'Draft complaint / answer / counterclaims',                     staffId:s0, hours:6},
+      {desc:'Motions directed at pleadings (motion to dismiss, strike)',    staffId:s1, hours:8},
+      {desc:'Respond to opposing pleadings',                               staffId:s1, hours:5},
+      {desc:'Preliminary injunctions / provisional remedies',              staffId:s0, hours:0},
+      {desc:'Case management conference / scheduling order',               staffId:s0, hours:3},
+      {desc:'Motion for summary judgment',                                 staffId:s1, hours:14},
+      {desc:'Hearing preparation and attendance',                          staffId:s0, hours:4},
+      {desc:'Other dispositive and non-dispositive motions',              staffId:s1, hours:4},
+      {desc:'Paralegal — file, serve, and manage pleadings',              staffId:s2, hours:3},
+    ]),
+    makePhase('L300','Discovery',[
+      {desc:'Written discovery — draft interrogatories, RFPs, RFAs',       staffId:s1, hours:6},
+      {desc:'Written discovery — review and respond to requests',          staffId:s1, hours:10},
+      {desc:'Discovery research and meet-and-confer',                      staffId:s1, hours:4},
+      {desc:'Document review, production, and privilege log',              staffId:s2, hours:14},
+      {desc:'Depositions — client / party representatives',                staffId:s0, hours:6},
+      {desc:'Depositions — opposing / third-party witnesses',              staffId:s0, hours:10},
+      {desc:'Expert retention, preparation, and report review',            staffId:s0, hours:6},
+      {desc:'Expert depositions (defending and taking)',                   staffId:s0, hours:4},
+      {desc:'Discovery motions (motions to compel, protective orders)',    staffId:s0, hours:4},
+      {desc:'Transcript review and deposition summaries',                  staffId:s2, hours:6},
+    ]),
+    makePhase('L400','Trial Preparation & Trial',[
+      {desc:'Mediation statement preparation',                             staffId:s0, hours:4},
+      {desc:'Mediation attendance',                                        staffId:s0, hours:6},
+      {desc:'Pre-trial statement / joint pretrial stipulation',            staffId:s1, hours:6},
+      {desc:'Witness list and witness preparation',                        staffId:s0, hours:8},
+      {desc:'Exhibit list and trial notebook',                             staffId:s2, hours:10},
+      {desc:'Fact witness examination outlines',                           staffId:s0, hours:6},
+      {desc:'Expert witness preparation and cross-examination outlines',   staffId:s0, hours:6},
+      {desc:'Motions in limine and jury instructions',                     staffId:s1, hours:10},
+      {desc:'Opening statement and closing argument preparation',          staffId:s0, hours:6},
+      {desc:'Pre-trial hearings and conferences',                          staffId:s0, hours:4},
+      {desc:'Trial attendance — lead counsel (per day)',                   staffId:s0, hours:24},
+      {desc:'Trial attendance — associate support',                        staffId:s1, hours:24},
+      {desc:'Post-trial motions and submissions',                          staffId:s1, hours:8},
+      {desc:'Enforcement / collection of judgment',                        staffId:s1, hours:4},
+    ]),
+    makePhase('L500','Appeal',[
+      {desc:'Assess grounds for appeal / notice of appeal',               staffId:s0, hours:3},
+      {desc:'Appellate motions (stay pending appeal, etc.)',               staffId:s1, hours:4},
+      {desc:'Trial transcript and record review',                          staffId:s1, hours:8},
+      {desc:'Draft and file appellate brief',                              staffId:s1, hours:20},
+      {desc:'Oral argument preparation and attendance',                    staffId:s0, hours:8},
+    ]),
+  ];
+  phases[4].included = false; // exclude appeal by default
+}
+
+function initCosts() {
+  costRows = [
+    // Court
+    {id:uid(), cat:'Court Costs',       desc:'Filing fees — complaint / responsive pleading',       amount:400},
+    {id:uid(), cat:'Court Costs',       desc:'Process server / service of process',                 amount:150},
+    {id:uid(), cat:'Court Costs',       desc:'Court filing fees — motions',                          amount:200},
+    // Depositions
+    {id:uid(), cat:'Deposition Costs',  desc:'Court reporter fees',                                  amount:0},
+    {id:uid(), cat:'Deposition Costs',  desc:'Deposition transcripts',                               amount:0},
+    {id:uid(), cat:'Deposition Costs',  desc:'Video recording of depositions',                       amount:0},
+    {id:uid(), cat:'Deposition Costs',  desc:'Medical, corporate, and records fees',                 amount:0},
+    {id:uid(), cat:'Deposition Costs',  desc:'E-discovery / document review platform',               amount:0},
+    // Experts
+    {id:uid(), cat:'Expert Witnesses',  desc:'Expert witness — retention fee',                       amount:0},
+    {id:uid(), cat:'Expert Witnesses',  desc:'Expert witness — report preparation fee',              amount:0},
+    {id:uid(), cat:'Expert Witnesses',  desc:'Expert witness — deposition and trial testimony',      amount:0},
+    {id:uid(), cat:'Expert Witnesses',  desc:'Trial or jury consultant',                             amount:0},
+    // Trial
+    {id:uid(), cat:'Trial Costs',       desc:'Demonstrative exhibits and trial graphics',            amount:0},
+    {id:uid(), cat:'Trial Costs',       desc:'Trial technology / presentation equipment',            amount:0},
+    {id:uid(), cat:'Trial Costs',       desc:'Trial transcripts',                                    amount:0},
+    {id:uid(), cat:'Trial Costs',       desc:'Witness fees and subpoena costs',                      amount:0},
+    // Other
+    {id:uid(), cat:'Other',             desc:'Mediation / ADR fees',                                 amount:1500},
+    {id:uid(), cat:'Other',             desc:'Travel and lodging',                                   amount:0},
+    {id:uid(), cat:'Other',             desc:'Postage, courier, and copying',                        amount:200},
+    {id:uid(), cat:'Other',             desc:'Miscellaneous',                                        amount:0},
+  ];
+}
+
+// ── Tabs ─────────────────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  recalc();
+}
+
+function toggleInfo(hdr) {
+  hdr.nextElementSibling.classList.toggle('hidden');
+  hdr.querySelector('.info-caret').classList.toggle('closed');
+}
+
+// ── Render: Staff ─────────────────────────────────────────────
+function renderStaff() {
+  const tbody = document.getElementById('staff-body');
+  tbody.innerHTML = '';
+  staffList.forEach((s,i) => {
+    const cr = clientRate(s);
+    const tr = document.createElement('tr');
+    const roleOpts = Object.keys(ROLE_DEFAULTS).map(r =>
+      `<option value="${r}"${s.role===r?' selected':''}>${cap(r)}</option>`
+    ).join('');
+    tr.innerHTML = `
+      <td><input type="text" value="${esc(s.name)}" oninput="staffList[${i}].name=this.value;renderPhases();recalc()"></td>
+      <td>
+        <select onchange="onRoleChange(${i},this)">
+          ${roleOpts}
+        </select>
+      </td>
+      <td class="r"><input type="number" value="${s.stdRate}" style="width:85px;text-align:right;" min="0" step="5"
+        oninput="staffList[${i}].stdRate=+this.value;renderPhases();recalc()"></td>
+      <td class="r"><input type="number" value="${s.discount}" style="width:60px;text-align:right;" min="0" max="100" step="1"
+        oninput="staffList[${i}].discount=+this.value;renderPhases();recalc()"></td>
+      <td class="r" style="font-weight:700;color:#2b6cb0;" id="staff-cr-${i}">${fmt(cr)}</td>
+      <td class="c"><button class="btn btn-remove btn-sm" onclick="removeStaff(${i})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function onRoleChange(i, sel) {
+  staffList[i].role = sel.value;
+  if (ROLE_DEFAULTS[sel.value] !== undefined) {
+    staffList[i].stdRate = ROLE_DEFAULTS[sel.value];
+  }
+  renderStaff();
+  renderPhases();
+  recalc();
+}
+
+function addStaff() {
+  staffList.push({id:uid(), name:'New Timekeeper', role:'associate', stdRate:275, discount:0});
+  renderStaff(); renderPhases(); recalc();
+}
+function removeStaff(i) {
+  if (staffList.length <= 1) { alert('At least one timekeeper required.'); return; }
+  staffList.splice(i,1);
+  renderStaff(); renderPhases(); recalc();
+}
+
+// ── Render: Phases ────────────────────────────────────────────
+function showActuals(){ return !!document.getElementById('show-actuals-toggle')?.checked; }
+
+function colCount(){ return showActuals() ? 8 : 6; }
+
+function renderPhases() {
+  const tbody = document.getElementById('phase-body');
+  tbody.innerHTML = '';
+  const sa = showActuals();
+
+  const thA  = document.getElementById('th-actual');
+  const thAF = document.getElementById('th-actual-fee');
+  if(thA)  thA.style.display  = sa ? '' : 'none';
+  if(thAF) thAF.style.display = sa ? '' : 'none';
+
+  const cc = colCount();
+
+  phases.forEach((phase, pi) => {
+    const inc    = phase.included;
+    const pHours = phase.tasks.reduce((a,t)=>a+t.hours,0);
+    const pFee   = phaseFees(phase);
+    const pActH  = phase.tasks.reduce((a,t)=>a+(t.actualHours||0),0);
+    const pActF  = phase.tasks.reduce((a,t)=>a+(t.actualHours||0)*getRate(t.staffId),0);
+
+    // Phase header
+    const hr = document.createElement('tr');
+    hr.className = 'phase-hdr-row' + (inc ? '' : ' excluded');
+    hr.innerHTML = `
+      <td colspan="${cc-2}" style="padding:8px 12px;">
+        <span class="phase-code-badge">${esc(phase.code)}</span>
+        <input type="text" value="${esc(phase.name)}"
+          style="background:transparent;border:none;color:white;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.4px;width:260px;padding:0;"
+          oninput="phases[${pi}].name=this.value;recalc()">
+      </td>
+      <td class="c">
+        <button class="phase-toggle-btn${inc?'':' off'}" onclick="togglePhase(${pi})">
+          ${inc ? '✓ Active' : '✗ Excluded'}
+        </button>
+      </td>
+      <td class="c">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:white;font-size:11px;" onclick="addTask(${pi})">+ Task</button>
+      </td>
+    `;
+    tbody.appendChild(hr);
+
+    // Task rows
+    phase.tasks.forEach((task, ti) => {
+      const rate = getRate(task.staffId);
+      const fee  = rate * task.hours;
+      const actF = rate * (task.actualHours||0);
+      const variance = (task.hours > 0) ? ((task.actualHours||0) - task.hours) / task.hours * 100 : 0;
+      const tr = document.createElement('tr');
+      tr.className = 'task-row' + (inc ? '' : ' excluded');
+      const staffOpts = staffList.map(s=>`<option value="${s.id}"${task.staffId===s.id?' selected':''}>${esc(s.name)}</option>`).join('');
+      const actualCols = sa ? `
+        <td class="r actuals-col">
+          <input type="number" value="${task.actualHours||0}" style="width:65px;text-align:right;" step="0.5" min="0"
+            oninput="phases[${pi}].tasks[${ti}].actualHours=+this.value;recalc()">
+        </td>` : '';
+      const actualFeeCol = sa ? `<td class="r actuals-col ${variance>15?'over-budget':variance<-10?'under-budget':''}">${fmt(actF)}</td>` : '';
+      tr.innerHTML = `
+        <td style="padding-left:24px;">
+          <input type="text" value="${esc(task.desc)}" style="width:100%;" oninput="phases[${pi}].tasks[${ti}].desc=this.value">
+        </td>
+        <td>
+          <select onchange="phases[${pi}].tasks[${ti}].staffId=this.value;recalc()">
+            ${staffOpts}
+          </select>
+        </td>
+        <td class="r">
+          <input type="number" value="${task.hours}" style="width:65px;text-align:right;" step="0.5" min="0"
+            oninput="phases[${pi}].tasks[${ti}].hours=+this.value;recalc()">
+        </td>
+        ${actualCols}
+        <td class="r" style="color:#718096;">${fmt(rate)}</td>
+        <td class="r" style="font-weight:700;">${fmt(fee)}</td>
+        ${actualFeeCol}
+        <td class="c"><button class="btn btn-remove btn-sm" onclick="removeTask(${pi},${ti})">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Subtotal row
+    const str = document.createElement('tr');
+    str.className = 'subtotal-row' + (inc ? '' : ' excluded');
+    const subActCols = sa ? `<td class="r actuals-col">${fmtH(pActH)} hrs</td>` : '';
+    const subActFeeCol = sa ? `<td class="r actuals-col">${fmt(pActF)}</td>` : '';
+    str.innerHTML = `
+      <td colspan="2" style="font-size:12px;color:#718096;">${esc(phase.code)} Subtotal${inc?'':' (EXCLUDED)'}</td>
+      <td class="r">${fmtH(pHours)} hrs</td>
+      ${subActCols}
+      <td class="r"></td>
+      <td class="r">${fmt(pFee)}</td>
+      ${subActFeeCol}
+      <td></td>
+    `;
+    tbody.appendChild(str);
+  });
+
+  // Grand total
+  const activePh = phases.filter(p=>p.included);
+  const totalFees  = activePh.reduce((a,p)=>a+phaseFees(p),0);
+  const totalHours = activePh.reduce((a,p)=>a+p.tasks.reduce((b,t)=>b+t.hours,0),0);
+  const totalActH  = activePh.reduce((a,p)=>a+p.tasks.reduce((b,t)=>b+(t.actualHours||0),0),0);
+  const totalActF  = activePh.reduce((a,p)=>a+p.tasks.reduce((b,t)=>b+(t.actualHours||0)*getRate(t.staffId),0),0);
+  const gtr = document.createElement('tr');
+  gtr.className = 'grand-total-row';
+  const gActCols = sa ? `<td class="r">${fmtH(totalActH)} hrs</td>` : '';
+  const gActFeeCol = sa ? `<td class="r">${fmt(totalActF)}</td>` : '';
+  gtr.innerHTML = `
+    <td colspan="2">Total Estimated Fees — Active Phases</td>
+    <td class="r">${fmtH(totalHours)} hrs</td>
+    ${gActCols}
+    <td class="r"></td>
+    <td class="r">${fmt(totalFees)}</td>
+    ${gActFeeCol}
+    <td></td>
+  `;
+  tbody.appendChild(gtr);
+}
+
+function togglePhase(pi) { phases[pi].included = !phases[pi].included; renderPhases(); recalc(); }
+function addTask(pi) {
+  phases[pi].tasks.push({id:uid(), desc:'New task', staffId:staffList[0]?.id||'', hours:2, actualHours:0});
+  renderPhases(); recalc();
+}
+function removeTask(pi,ti){ phases[pi].tasks.splice(ti,1); renderPhases(); recalc(); }
+function addPhase() {
+  const n = phases.length + 1;
+  phases.push(makePhase('L'+n+'00','New Phase',[{desc:'New task',staffId:staffList[0]?.id||'',hours:4,actualHours:0}]));
+  renderPhases(); recalc();
+}
+
+// ── Render: Costs ─────────────────────────────────────────────
+function renderCosts() {
+  const tbody = document.getElementById('costs-body');
+  tbody.innerHTML = '';
+  let lastCat = '';
+  costRows.forEach((r,i) => {
+    if (r.cat !== lastCat) {
+      const ch = document.createElement('tr');
+      ch.innerHTML = `<td colspan="4" class="cost-cat-hdr">${esc(r.cat)}</td>`;
+      tbody.appendChild(ch);
+      lastCat = r.cat;
+    }
+    const tr = document.createElement('tr');
+    const catOpts = ['Court Costs','Deposition Costs','Expert Witnesses','Trial Costs','Other'].map(c=>
+      `<option${r.cat===c?' selected':''}>${c}</option>`
+    ).join('');
+    tr.innerHTML = `
+      <td>
+        <select onchange="costRows[${i}].cat=this.value;renderCosts();recalc()" style="width:100%;">
+          ${catOpts}
+        </select>
+      </td>
+      <td><input type="text" value="${esc(r.desc)}" style="width:100%;" oninput="costRows[${i}].desc=this.value"></td>
+      <td class="r"><input type="number" value="${r.amount}" style="width:100px;text-align:right;" min="0" step="50"
+        oninput="costRows[${i}].amount=+this.value;recalc()"></td>
+      <td class="c"><button class="btn btn-remove btn-sm" onclick="removeCostRow(${i})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('costs-total-cell').textContent = fmt(totalCosts());
+}
+
+function addCostRow() {
+  costRows.push({id:uid(), cat:'Other', desc:'New cost item', amount:0});
+  renderCosts(); recalc();
+}
+function removeCostRow(i) {
+  costRows.splice(i,1); renderCosts(); recalc();
+}
+
+// ── Recalc ────────────────────────────────────────────────────
+function recalc() {
+  const caseName = v('i_casename') || 'New Matter';
+  const client   = v('i_client')   || '';
+  const caseType = v('i_casetype') || '';
+  const court    = v('i_court')    || '';
+  document.getElementById('h_case').textContent = caseName;
+  let sub = [caseType, client, court].filter(Boolean).join(' · ');
+  document.getElementById('h_sub').textContent = sub || 'Ready Legal';
+
+  const activePh   = phases.filter(p=>p.included);
+  const excludedPh = phases.filter(p=>!p.included);
+
+  const totalFees      = activePh.reduce((a,p)=>a+phaseFees(p),0);
+  const totalHours     = activePh.reduce((a,p)=>a+p.tasks.reduce((b,t)=>b+t.hours,0),0);
+  const totalActHours  = activePh.reduce((a,p)=>a+p.tasks.reduce((b,t)=>b+(t.actualHours||0),0),0);
+  const totalActFees   = activePh.reduce((a,p)=>a+p.tasks.reduce((b,t)=>b+(t.actualHours||0)*getRate(t.staffId),0),0);
+  const contingentFees = excludedPh.reduce((a,p)=>a+phaseFees(p),0);
+  const contingentHrs  = excludedPh.reduce((a,p)=>a+p.tasks.reduce((b,t)=>b+t.hours,0),0);
+  const tc             = totalCosts();
+  const totalBudget    = totalFees + tc;
+  const blended        = totalHours > 0 ? totalFees / totalHours : 0;
+  const caseValue      = vn('i_casevalue');
+
+  document.getElementById('costs-total-cell').textContent = fmt(tc);
+
+  // Cards
+  set('s_fees',      fmt(totalFees));
+  set('s_costs',     fmt(tc));
+  set('s_total',     fmt(totalBudget));
+  set('s_contingent',fmt(contingentFees));
+  set('s_hours',     fmtH(totalHours));
+  set('s_blend',     totalHours > 0 ? fmt(blended)+'/hr' : '—');
+
+  if (caseValue > 0 && totalBudget > 0) {
+    const ratio = caseValue / totalBudget;
+    set('s_ratio', ratio.toFixed(1)+'x');
+    document.getElementById('s_ratio').className = 'card-value '+(ratio>=5?'ok':ratio>=2?'warn':'danger');
+  } else {
+    set('s_ratio','—');
+    document.getElementById('s_ratio').className = 'card-value';
+  }
+
+  const sa = showActuals();
+  const acCard = document.getElementById('actuals-card');
+  if (acCard) acCard.style.display = sa ? '' : 'none';
+  if (sa) {
+    set('s_actual', fmt(totalActFees));
+    set('s_actual_pct', (totalFees>0 ? (totalActFees/totalFees*100).toFixed(0) : '0')+'%');
+  }
+
+  // Exec summary
+  const execBody = document.getElementById('exec-body');
+  const execFoot = document.getElementById('exec-foot');
+  if (execBody) {
+    execBody.innerHTML = '';
+    ['th-actual-exec','th-actual-exec-fee'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.style.display=sa?'':'none';
+    });
+    phases.forEach(p => {
+      const pFee   = phaseFees(p);
+      const pHours = p.tasks.reduce((a,t)=>a+t.hours,0);
+      const pActH  = p.tasks.reduce((a,t)=>a+(t.actualHours||0),0);
+      const pActF  = p.tasks.reduce((a,t)=>a+(t.actualHours||0)*getRate(t.staffId),0);
+      const pct    = (totalFees>0 && p.included) ? (pFee/totalFees*100).toFixed(1) : '—';
+      const color  = PHASE_COLORS[p.code] || '#a0aec0';
+      const tr = document.createElement('tr');
+      const actCols = sa ? `<td class="r actuals-col">${fmtH(pActH)}</td>` : '';
+      const actFeeCol = sa ? `<td class="r actuals-col">${fmt(pActF)}</td>` : '';
+      tr.innerHTML = `
+        <td style="font-weight:700;color:#2b6cb0;">
+          <span class="phase-color-dot" style="background:${color};"></span>${esc(p.code)}
+        </td>
+        <td>${esc(p.name)}</td>
+        <td class="r">${fmtH(pHours)}</td>
+        ${actCols}
+        <td class="r">${fmt(pFee)}</td>
+        ${actFeeCol}
+        <td class="r" style="color:#718096;font-size:12px;">${pct}${pct!=='—'?'%':''}</td>
+        <td class="c"><span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:${p.included?'#c6f6d5':'#fed7d7'};color:${p.included?'#276749':'#c53030'};">${p.included?'Active':'Excluded'}</span></td>
+      `;
+      execBody.appendChild(tr);
+    });
+    const fActCols = sa ? `<td class="r">${fmtH(totalActHours)}</td>` : '';
+    const fActFeeCol = sa ? `<td class="r">${fmt(totalActFees)}</td>` : '';
+    execFoot.innerHTML = `<tr class="grand-total-row">
+      <td colspan="2">Active Phase Totals</td>
+      <td class="r">${fmtH(totalHours)}</td>
+      ${fActCols}
+      <td class="r">${fmt(totalFees)}</td>
+      ${fActFeeCol}
+      <td class="r">100%</td>
+      <td></td>
+    </tr>`;
+  }
+
+  // Phase bar chart
+  const phaseChart = document.getElementById('phase-chart');
+  if (phaseChart) {
+    phaseChart.innerHTML = '';
+    const maxPF = Math.max(...phases.map(p=>phaseFees(p)), 1);
+    phases.forEach(p => {
+      const fee = phaseFees(p);
+      const pct = (fee/maxPF*100).toFixed(1);
+      const color = PHASE_COLORS[p.code] || '#a0aec0';
+      phaseChart.innerHTML += `<div class="bar-row">
+        <div class="bar-name" title="${p.code}: ${p.name}">${p.code} — ${p.name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color};opacity:${p.included?1:0.35};"></div></div>
+        <div class="bar-amount">${fmt(fee)}</div>
+      </div>`;
+    });
+  }
+
+  // Staff bar chart
+  const staffChart = document.getElementById('staff-chart');
+  if (staffChart) {
+    staffChart.innerHTML = '';
+    const staffFees = {};
+    activePh.forEach(p=>p.tasks.forEach(t=>{
+      const s=staffList.find(x=>x.id===t.staffId);
+      if(!s) return;
+      staffFees[s.name]=(staffFees[s.name]||0)+t.hours*clientRate(s);
+    }));
+    const maxSF = Math.max(...Object.values(staffFees), 1);
+    Object.entries(staffFees).forEach(([name,fee],i)=>{
+      const pct=(fee/maxSF*100).toFixed(1);
+      staffChart.innerHTML+=`<div class="bar-row">
+        <div class="bar-name" title="${name}">${name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${COST_COLORS[i%COST_COLORS.length]};"></div></div>
+        <div class="bar-amount">${fmt(fee)}</div>
+      </div>`;
+    });
+  }
+
+  // Fee waterfall
+  const fwEl = document.getElementById('fee-waterfall');
+  if (fwEl) {
+    let fw = '';
+    phases.forEach(p=>{
+      const fee=phaseFees(p);
+      const cls = p.included ? '' : ' class="wf-excluded"';
+      fw+=`<div class="wf-row"${cls}><div><span style="font-size:10px;font-weight:700;color:${PHASE_COLORS[p.code]||'#a0aec0'};margin-right:6px;">${p.code}</span>${esc(p.name)}${p.included?'':' (excluded)'}</div><div class="wf-val">${fmt(fee)}</div></div>`;
+    });
+    fw+=`<div class="wf-total"><span>Total Active Fees</span><span>${fmt(totalFees)}</span></div>`;
+    fwEl.innerHTML=fw;
+  }
+
+  // Cost waterfall
+  const cwEl = document.getElementById('cost-waterfall');
+  if (cwEl) {
+    const catTotals={};
+    costRows.forEach(r=>{ if(r.amount>0) catTotals[r.cat]=(catTotals[r.cat]||0)+r.amount; });
+    let cw='';
+    if (Object.keys(catTotals).length === 0) {
+      cw='<div style="color:#a0aec0;font-size:13px;padding:8px 0;">No costs entered yet.</div>';
+    } else {
+      Object.entries(catTotals).forEach(([cat,amt])=>{
+        cw+=`<div class="wf-row"><div>${esc(cat)}</div><div class="wf-val">${fmt(amt)}</div></div>`;
+      });
+    }
+    cw+=`<div class="wf-total"><span>Total Costs</span><span>${fmt(tc)}</span></div>`;
+    cwEl.innerHTML=cw;
+  }
+
+  // Retainer
+  const earlyPh  = activePh.slice(0, Math.min(2, activePh.length));
+  const earlyFees = earlyPh.reduce((a,p)=>a+phaseFees(p),0);
+  const retainer  = Math.ceil((earlyFees + tc) / 1000) * 1000;
+  set('r_amount', fmt(retainer));
+  const earlyNames = earlyPh.map(p=>`${p.code} (${p.name})`).join(' and ');
+  set('r_detail', `Covers estimated fees through ${earlyNames||'initial phases'}, plus all anticipated costs (${fmt(tc)}). Adjust based on matter complexity and client relationship. Recommend interim billing at 30–60 day intervals.`);
+
+  // Scenarios
+  const bestPct   = vn('sc_best_pct')   || 40;
+  const likelyPct = vn('sc_likely_pct') || 100;
+  const worstPct  = vn('sc_worst_pct')  || 160;
+
+  const bestMult   = bestPct   / 100;
+  const likelyMult = likelyPct / 100;
+  const worstMult  = worstPct  / 100;
+
+  // Worst case includes contingent phases
+  const worstFees  = (totalFees + contingentFees) * worstMult;
+  const worstHours = (totalHours + contingentHrs) * worstMult;
+
+  const bestTotal   = totalFees * bestMult   + tc;
+  const likelyTotal = totalFees * likelyMult + tc;
+  const worstTotal  = worstFees              + tc;
+
+  // Update scenario name labels
+  const bestName   = v('sc_best_name')   || 'Best Case';
+  const likelyName = v('sc_likely_name') || 'Likely Case';
+  const worstName  = v('sc_worst_name')  || 'Worst Case';
+
+  set('sc_best_label',   bestName);
+  set('sc_likely_label', likelyName);
+  set('sc_worst_label',  worstName);
+
+  set('sc_best_col_hdr',   bestName);
+  set('sc_likely_col_hdr', likelyName);
+  set('sc_worst_col_hdr',  worstName);
+
+  set('sc_best_amt',   fmt(bestTotal));
+  set('sc_likely_amt', fmt(likelyTotal));
+  set('sc_worst_amt',  fmt(worstTotal));
+
+  set('sc_best_hrs',   fmtH(totalHours * bestMult)   + ' hrs estimated');
+  set('sc_likely_hrs', fmtH(totalHours * likelyMult) + ' hrs estimated');
+  set('sc_worst_hrs',  fmtH(worstHours)              + ' hrs estimated (incl. contingent phases)');
+
+  set('sc_best_desc_disp',   v('sc_best_desc'));
+  set('sc_likely_desc_disp', v('sc_likely_desc'));
+  set('sc_worst_desc_disp',  v('sc_worst_desc'));
+
+  // Scenario detail table
+  const sdb  = document.getElementById('scenario-detail-body');
+  const sdft = document.getElementById('scenario-detail-foot');
+  if (sdb) {
+    sdb.innerHTML='';
+    phases.forEach(p=>{
+      const pFee   = phaseFees(p);
+      const pHours = p.tasks.reduce((a,t)=>a+t.hours,0);
+      const isContingent = !p.included;
+      // Best / Likely: only active phases. Worst: all phases.
+      const bestFee   = isContingent ? 0              : pFee * bestMult;
+      const likelyFee = isContingent ? 0              : pFee * likelyMult;
+      const worstFee  = pFee * worstMult; // all phases in worst
+
+      const bestHrs   = isContingent ? 0              : pHours * bestMult;
+      const likelyHrs = isContingent ? 0              : pHours * likelyMult;
+      const worstHrs  = pHours * worstMult;
+
+      const color = PHASE_COLORS[p.code] || '#a0aec0';
+      const tr = document.createElement('tr');
+      tr.innerHTML=`
+        <td style="font-weight:700;color:${color};">${esc(p.code)}</td>
+        <td>${esc(p.name)}</td>
+        <td class="c"><span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:${p.included?'#c6f6d5':'#fed7d7'};color:${p.included?'#276749':'#c53030'};">${p.included?'Active':'Contingent'}</span></td>
+        <td class="r">${fmtH(pHours)} hrs</td>
+        <td class="r">${fmt(pFee)}</td>
+        <td class="r" style="color:#276749;font-weight:700;">${isContingent ? '<span style="color:#a0aec0;">—</span>' : fmt(bestFee)+'<br><span style="font-size:11px;color:#68d391;">'+fmtH(bestHrs)+' hrs</span>'}</td>
+        <td class="r" style="color:#2b6cb0;font-weight:700;">${isContingent ? '<span style="color:#a0aec0;">—</span>' : fmt(likelyFee)+'<br><span style="font-size:11px;color:#63b3ed;">'+fmtH(likelyHrs)+' hrs</span>'}</td>
+        <td class="r" style="color:#c53030;font-weight:700;">${fmt(worstFee)}<br><span style="font-size:11px;color:#fc8181;">${fmtH(worstHrs)} hrs</span></td>
+      `;
+      sdb.appendChild(tr);
+    });
+
+    // Costs row
+    if (tc > 0) {
+      const tcTr = document.createElement('tr');
+      tcTr.style.background='#f7fafc';
+      tcTr.innerHTML=`
+        <td colspan="2" style="font-style:italic;color:#4a5568;">Costs &amp; Disbursements</td>
+        <td></td>
+        <td class="r">—</td>
+        <td class="r">${fmt(tc)}</td>
+        <td class="r" style="color:#276749;font-weight:700;">${fmt(tc)}</td>
+        <td class="r" style="color:#2b6cb0;font-weight:700;">${fmt(tc)}</td>
+        <td class="r" style="color:#c53030;font-weight:700;">${fmt(tc)}</td>
+      `;
+      sdb.appendChild(tcTr);
+    }
+  }
+
+  if (sdft) {
+    sdft.innerHTML=`<tr class="grand-total-row">
+      <td colspan="4">Total Budget</td>
+      <td class="r">${fmt(totalBudget)}</td>
+      <td class="r" style="color:#9ae6b4;">${fmt(bestTotal)}</td>
+      <td class="r" style="color:#90cdf4;">${fmt(likelyTotal)}</td>
+      <td class="r" style="color:#fc8181;">${fmt(worstTotal)}</td>
+    </tr>`;
+  }
+
+  // Narrative
+  const narrativeEl = document.getElementById('scenario-narrative');
+  if (narrativeEl && v('i_casename')) {
+    const cname = v('i_casename') || 'this matter';
+    const clt   = v('i_client')   ? `for ${v('i_client')}` : '';
+    narrativeEl.textContent =
+`Litigation Budget Summary — ${cname}${clt ? ' ' + clt : ''}
+
+Based on our current assessment, we have prepared the following budget range ${clt}:
+
+${bestName}: ${fmt(bestTotal)}
+${(v('sc_best_desc')||'Early resolution — limited litigation activity.').replace(/\n/g,' ')} This assumes approximately ${fmtH(totalHours*bestMult)} attorney hours through resolution.
+
+${likelyName}: ${fmt(likelyTotal)}
+${(v('sc_likely_desc')||'Standard litigation through discovery and potential trial.').replace(/\n/g,' ')} This assumes approximately ${fmtH(totalHours*likelyMult)} attorney hours.
+
+${worstName}: ${fmt(worstTotal)}
+${(v('sc_worst_desc')||'Full trial and possible appeal.').replace(/\n/g,' ')} This scenario assumes approximately ${fmtH(worstHours)} attorney hours and includes all contingent phases.
+
+These figures represent estimates only and may vary based on the complexity of discovery, motion practice, court scheduling, and other factors outside our control. We will provide updated budget estimates as the matter develops.${v('i_assumptions') ? '\n\nKey Assumptions: ' + v('i_assumptions') : ''}`;
+  }
+}
+
+// ── Save as HTML ──────────────────────────────────────────────
+function captureForm() {
+  const ids = ['casename','client','casetype','posture','court','matter','feetype','contingency','casevalue','period','goals','notes','assumptions'];
+  const form = {};
+  ids.forEach(k => { form[k] = v('i_'+k); });
+  form.sc_best_name   = v('sc_best_name');
+  form.sc_best_pct    = v('sc_best_pct');
+  form.sc_best_desc   = v('sc_best_desc');
+  form.sc_likely_name = v('sc_likely_name');
+  form.sc_likely_pct  = v('sc_likely_pct');
+  form.sc_likely_desc = v('sc_likely_desc');
+  form.sc_worst_name  = v('sc_worst_name');
+  form.sc_worst_pct   = v('sc_worst_pct');
+  form.sc_worst_desc  = v('sc_worst_desc');
+  form.showActuals    = showActuals();
+  return form;
+}
+
+function restoreForm(form) {
+  if (!form) return;
+  const ids = ['casename','client','casetype','posture','court','matter','feetype','contingency','casevalue','period','goals','notes','assumptions'];
+  ids.forEach(k => { const el=document.getElementById('i_'+k); if(el) el.value=form[k]||''; });
+  const scFields = ['sc_best_name','sc_best_pct','sc_best_desc','sc_likely_name','sc_likely_pct','sc_likely_desc','sc_worst_name','sc_worst_pct','sc_worst_desc'];
+  scFields.forEach(k => { const el=document.getElementById(k); if(el) el.value=form[k]||''; });
+  const sat = document.getElementById('show-actuals-toggle');
+  if (sat) sat.checked = !!form.showActuals;
+}
+
+function saveAsHTML() {
+  const state = {
+    form: captureForm(),
+    staffList: staffList,
+    phases: phases,
+    costRows: costRows,
+  };
+  const json = JSON.stringify(state);
+
+  // Clear dynamic content before capturing outerHTML
+  ['staff-body','phase-body','costs-body','exec-body','exec-foot',
+   'phase-chart','staff-chart','fee-waterfall','cost-waterfall',
+   'scenario-detail-body','scenario-detail-foot','scenario-narrative'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+
+  let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  html = html.replace(
+    'var __INITIAL_STATE__ = null; // SAVE_MARKER',
+    'var __INITIAL_STATE__ = ' + json + '; // SAVE_MARKER'
+  );
+
+  // Re-render after capturing
+  renderStaff(); renderPhases(); renderCosts(); recalc();
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  const fileName = (v('i_casename') || 'Litigation Budget').replace(/[\/\\:*?"<>|]/g,'_');
+  a.download = fileName + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function newBudget() {
+  if (!confirm('Start a new budget? All current data will be cleared.')) return;
+  location.reload();
+}
+
+// ── Init ──────────────────────────────────────────────────────
+function init() {
+  if (__INITIAL_STATE__) {
+    // Restore saved state
+    const s = __INITIAL_STATE__;
+    staffList = s.staffList || [];
+    phases    = s.phases    || [];
+    costRows  = s.costRows  || [];
+    renderStaff();
+    renderPhases();
+    renderCosts();
+    restoreForm(s.form);
+  } else {
+    // Fresh defaults
+    initStaff();
+    initPhases();
+    initCosts();
+    renderStaff();
+    renderPhases();
+    renderCosts();
+  }
+  recalc();
+}
+
+init();
+</script>
+</body>
+</html>
